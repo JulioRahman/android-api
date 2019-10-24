@@ -1,61 +1,39 @@
 package com.julio.api;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import android.app.ProgressDialog;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.util.Log;
 
-import com.julio.api.adapter.CustomAdapter;
-import com.julio.api.model.RetroPhoto;
-import com.julio.api.network.APIInterface;
-import com.julio.api.network.RetrofitClientInstance;
+import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.List;
+import com.julio.api.model.Users;
+import com.julio.api.network.APIClient;
+import com.julio.api.network.EndPoint;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.Retrofit;
 
 public class MainActivity extends AppCompatActivity {
-    private CustomAdapter adapter;
-    private RecyclerView recyclerView;
-    ProgressDialog progressDoalog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        progressDoalog = new ProgressDialog(MainActivity.this);
-        progressDoalog.setMessage("Loading....");
-        progressDoalog.show();
-
-        /*Create handle for the RetrofitInstance interface*/
-        APIInterface service = RetrofitClientInstance.getRetrofitInstance().create(APIInterface.class);
-        Call<List<RetroPhoto>> call = service.getAllPhotos();
-        call.enqueue(new Callback<List<RetroPhoto>>() {
+        Retrofit retrofit = APIClient.getClient();
+        EndPoint endPoint = retrofit.create(EndPoint.class);
+        Call<Users> responseCall = endPoint.getUsers();
+        responseCall.enqueue(new Callback<Users>() {
             @Override
-            public void onResponse(Call<List<RetroPhoto>> call, Response<List<RetroPhoto>> response) {
-                progressDoalog.dismiss();
-                generateDataList(response.body());
+            public void onResponse(Call<Users> call, Response<Users> response) {
+                Log.d("Eudeka!", "onResponse: " + response.body().data.get(0).lastName);
             }
 
             @Override
-            public void onFailure(Call<List<RetroPhoto>> call, Throwable t) {
-                progressDoalog.dismiss();
-                Toast.makeText(MainActivity.this, "Something went wrong...Please try later!", Toast.LENGTH_SHORT).show();
+            public void onFailure(Call<Users> call, Throwable t) {
+                Log.d("Eudeka!", "onFailure: " + t.getMessage());
             }
         });
-    }
-
-    private void generateDataList(List<RetroPhoto> photoList) {
-        recyclerView = findViewById(R.id.customRecyclerView);
-        adapter = new CustomAdapter(this, photoList.subList(0, 30)); // limit 30
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setAdapter(adapter);
     }
 }
